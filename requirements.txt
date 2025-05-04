@@ -1,36 +1,35 @@
 # Flask and related packages
-flask>=2.0.0
-flask-login>=0.6.0
-flask-wtf>=1.0.0
-werkzeug>=2.0.0
-python-dotenv>=0.20.0
-jinja2>=3.0.0
+flask
+flask-login
+flask-wtf
+werkzeug
+python-dotenv
+jinja2
 
 # MongoDB and database
-pymongo>=4.0.0
-bson>=0.5.0
-flask-bcrypt>=1.0.0
+pymongo
+flask-bcrypt
 
 # PDF processing
-PyPDF2>=2.0.0
-pypdf>=3.0.0
-pdf2image>=1.16.0
-pytesseract>=0.3.0
-ocrmypdf>=14.0.0
+PyPDF2
+pypdf
+pdf2image
+pytesseract
+ocrmypdf
 
 # Azure services
-azure-ai-formrecognizer>=3.2.0
-azure-core>=1.0.0
+azure-ai-formrecognizer
+azure-core
 
 # Web API support
-fastapi>=0.95.0
-uvicorn>=0.20.0
-python-multipart>=0.0.5
-
+fastapi
+uvicorn
+python-multipart
+email_validator
 # Utilities
-pillow>=9.0.0
-requests>=2.25.0
-gunicorn>=20.1.0
+pillow
+requests
+gunicorn
 
 # Testing and development
-pytest>=7.0.0
+pytest

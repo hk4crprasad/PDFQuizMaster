@@ -111,7 +111,7 @@ class User(UserMixin):
             return bcrypt.check_password_hash(stored_hash, password)
         return False
     
-    def update_study_stats(self, score, total_questions, correct_answers):
+    def update_study_stats(self, score, total_questions, correct_answers, test_type=None):
         """Update user study statistics after taking a test"""
         stats = self.study_stats
         
@@ -126,14 +126,21 @@ class User(UserMixin):
         avg_score = ((stats.get('avg_score', 0) * (tests_taken - 1)) + score) / tests_taken
         
         # Update stats in MongoDB
+        update_fields = {
+            "study_stats.tests_taken": tests_taken,
+            "study_stats.avg_score": avg_score,
+            "study_stats.total_questions": total_q,
+            "study_stats.correct_answers": correct_a
+        }
+        
+        # Add test type specific counters if provided
+        if test_type:
+            test_type_count = stats.get(f'{test_type}_count', 0) + 1
+            update_fields[f"study_stats.{test_type}_count"] = test_type_count
+        
         mongo.db.users.update_one(
             {"_id": self.id},
-            {"$set": {
-                "study_stats.tests_taken": tests_taken,
-                "study_stats.avg_score": avg_score,
-                "study_stats.total_questions": total_q,
-                "study_stats.correct_answers": correct_a
-            }}
+            {"$set": update_fields}
         )
         
         # Update XP points (e.g., 10 XP per correct answer)
@@ -147,6 +154,10 @@ class User(UserMixin):
             "correct_answers": correct_a,
             "pdfs_processed": stats.get('pdfs_processed', 0)
         }
+        
+        # Add test type specific counters to local data
+        if test_type and f'{test_type}_count' in update_fields:
+            self.user_data['study_stats'][f'{test_type}_count'] = test_type_count
     
     def increment_pdfs_processed(self):
         """Increment the number of PDFs processed by the user"""
@@ -327,3 +338,91 @@ class UserTest:
     def get_by_id(cls, user_test_id):
         """Get user test by ID"""
         return mongo.db.user_tests.find_one({"_id": ObjectId(user_test_id)})
+
+class OJEEExam:
+    """OJEE Mock Exam model for MongoDB"""
+    
+    @classmethod
+    def create(cls, user_id, settings):
+        """Create a new OJEE mock exam"""
+        # Generate unique exam ID
+        from uuid import uuid4
+        
+        exam_data = {
+            "user_id": user_id,
+            "exam_id": str(uuid4()),
+            "created_at": datetime.utcnow(),
+            "settings": {
+                "exam_duration": settings.get("exam_duration", 120),
+                "math_questions": settings.get("math_questions", 60),
+                "computer_questions": settings.get("computer_questions", 60),
+                "enable_fullscreen": settings.get("enable_fullscreen", True),
+                "enable_anticheating": settings.get("enable_anticheating", True),
+                "show_explanations": settings.get("show_explanations", True)
+            },
+            "status": "created",
+            "questions": None,
+            "start_time": None,
+            "end_time": None,
+            "completed": False,
+            "score": None
+        }
+        
+        result = mongo.db.ojee_exams.insert_one(exam_data)
+        exam_data["_id"] = result.inserted_id
+        
+        return exam_data
+    
+    @classmethod
+    def get_by_id(cls, exam_id):
+        """Get exam by ID"""
+        return mongo.db.ojee_exams.find_one({"exam_id": exam_id})
+    
+    @classmethod
+    def get_by_user(cls, user_id):
+        """Get all exams for a user"""
+        return list(mongo.db.ojee_exams.find({"user_id": user_id}))
+    
+    @classmethod
+    def update_exam(cls, exam_id, update_data):
+        """Update exam data"""
+        mongo.db.ojee_exams.update_one(
+            {"exam_id": exam_id},
+            {"$set": update_data}
+        )
+    
+    @classmethod
+    def mark_started(cls, exam_id):
+        """Mark exam as started"""
+        mongo.db.ojee_exams.update_one(
+            {"exam_id": exam_id},
+            {"$set": {
+                "status": "in_progress",
+                "start_time": datetime.utcnow()
+            }}
+        )
+    
+    @classmethod
+    def mark_completed(cls, exam_id, user_answers, score_data):
+        """Mark exam as completed and save results"""
+        mongo.db.ojee_exams.update_one(
+            {"exam_id": exam_id},
+            {"$set": {
+                "status": "completed",
+                "end_time": datetime.utcnow(),
+                "completed": True,
+                "user_answers": user_answers,
+                "score": score_data
+            }}
+        )
+        
+    @classmethod
+    def save_questions(cls, exam_id, questions):
+        """Save generated questions to exam"""
+        mongo.db.ojee_exams.update_one(
+            {"exam_id": exam_id},
+            {"$set": {
+                "questions": json.dumps(questions),
+                "status": "ready"
+            }}
+        )

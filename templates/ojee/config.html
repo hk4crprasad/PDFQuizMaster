@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}OJEE Mock Exam Configuration{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">OJEE Mock Exam Configuration</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('ojee_exam_config') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Math Questions</label>
+                            <div class="form-check">
+                                {{ form.math_enabled(class="form-check-input") }}
+                                {{ form.math_enabled.label(class="form-check-label") }}
+                            </div>
+                            <div class="mt-2">
+                                {{ form.math_count.label(class="form-label") }}
+                                {{ form.math_count(class="form-control") }}
+                                {% if form.math_count.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.math_count.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Computer Awareness Questions</label>
+                            <div class="form-check">
+                                {{ form.computer_enabled(class="form-check-input") }}
+                                {{ form.computer_enabled.label(class="form-check-label") }}
+                            </div>
+                            <div class="mt-2">
+                                {{ form.computer_count.label(class="form-label") }}
+                                {{ form.computer_count(class="form-control") }}
+                                {% if form.computer_count.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.computer_count.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Exam Settings</label>
+                            <div class="mt-2">
+                                {{ form.time_limit.label(class="form-label") }}
+                                {{ form.time_limit(class="form-control") }}
+                                <small class="text-muted">Duration in minutes</small>
+                                {% if form.time_limit.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.time_limit.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-check mt-3">
+                                {{ form.show_explanations(class="form-check-input") }}
+                                {{ form.show_explanations.label(class="form-check-label") }}
+                                <small class="d-block text-muted">When enabled, explanations will be shown after the exam</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const mathEnabled = document.getElementById('math_enabled');
+        const mathCount = document.getElementById('math_count');
+        
+        const computerEnabled = document.getElementById('computer_enabled');
+        const computerCount = document.getElementById('computer_count');
+        
+        function updateFieldState() {
+            mathCount.disabled = !mathEnabled.checked;
+            computerCount.disabled = !computerEnabled.checked;
+        }
+        
+        mathEnabled.addEventListener('change', updateFieldState);
+        computerEnabled.addEventListener('change', updateFieldState);
+        
+        // Initial state
+        updateFieldState();
+    });
+</script>
+{% endblock %}

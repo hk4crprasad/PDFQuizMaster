@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block title %}Processing OJEE Exam{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Generating Your OJEE Mock Exam</h2>
+                </div>
+                <div class="card-body text-center">
+                    <div class="my-5">
+                        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <h4 class="mt-4 processing-status">Generating questions...</h4>
+                        <div class="progress mt-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="text-muted mt-3 processing-details">Creating your personalized OJEE mock exam</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.querySelector('.progress-bar');
+        const statusText = document.querySelector('.processing-status');
+        const detailsText = document.querySelector('.processing-details');
+        const examId = "{{ exam_id }}";
+        
+        let progress = 0;
+        const statusMessages = [
+            'Initializing exam structure...',
+            'Generating mathematics questions...',
+            'Creating computer awareness questions...',
+            'Finalizing exam content...'
+        ];
+        
+        const detailMessages = [
+            'Setting up your personalized OJEE mock exam',
+            'Creating challenging math problems across various topics',
+            'Developing computer awareness questions to test your knowledge',
+            'Putting everything together for your exam experience'
+        ];
+        
+        function updateProgress() {
+            progress += 5;
+            if (progress > 95) {
+                progress = 95;
+                clearInterval(progressInterval);
+                checkExamStatus();
+            }
+            
+            progressBar.style.width = progress + '%';
+            
+            // Update status messages based on progress
+            if (progress < 25) {
+                statusText.textContent = statusMessages[0];
+                detailsText.textContent = detailMessages[0];
+            } else if (progress < 50) {
+                statusText.textContent = statusMessages[1];
+                detailsText.textContent = detailMessages[1];
+            } else if (progress < 75) {
+                statusText.textContent = statusMessages[2];
+                detailsText.textContent = detailMessages[2];
+            } else {
+                statusText.textContent = statusMessages[3];
+                detailsText.textContent = detailMessages[3];
+            }
+        }
+        
+        function checkExamStatus() {
+            fetch(`/ojee/generate/status?exam_id=${examId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ready') {
+                        progressBar.style.width = '100%';
+                        statusText.textContent = 'Exam ready!';
+                        detailsText.textContent = 'Redirecting to exam page...';
+                        setTimeout(() => {
+                            window.location.href = `/ojee/take`;
+                        }, 1500);
+                    } else if (data.status === 'error') {
+                        progressBar.classList.remove('progress-bar-animated');
+                        progressBar.classList.add('bg-danger');
+                        statusText.textContent = 'Error generating exam';
+                        detailsText.textContent = data.message || 'Please try again later';
+                    } else {
+                        // Still processing
+                        setTimeout(checkExamStatus, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking exam status:', error);
+                    statusText.textContent = 'Error checking status';
+                    detailsText.textContent = 'Please refresh the page or try again';
+                });
+        }
+        
+        const progressInterval = setInterval(updateProgress, 1000);
+        
+        // Initial check after 5 seconds
+        setTimeout(checkExamStatus, 5000);
+    });
+</script>
+{% endblock %}

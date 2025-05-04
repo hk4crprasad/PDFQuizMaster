@@ -607,6 +607,383 @@ def download_pdf(pdf_id):
         logger.error(f"Download Error: {str(e)}")
         return redirect(url_for('auth.profile'))
 
+@app.route('/ojee', methods=['GET', 'POST'])
+@login_required
+def ojee_exam_config():
+    """Configure and generate OJEE mock exam"""
+    from forms import OJEEExamForm
+    from models_mongo import OJEEExam
+    
+    form = OJEEExamForm()
+    
+    if form.validate_on_submit():
+        # Get form data
+        # Adjust question counts based on enabled options
+        math_count = form.math_count.data if form.math_enabled.data else 0
+        computer_count = form.computer_count.data if form.computer_enabled.data else 0
+        
+        settings = {
+            "exam_duration": form.time_limit.data,
+            "math_questions": math_count,
+            "computer_questions": computer_count,
+            "enable_fullscreen": form.enable_fullscreen.data,
+            "enable_anticheating": form.enable_anticheating.data,
+            "show_explanations": form.show_explanations.data
+        }
+        
+        # Create exam in database
+        exam_data = OJEEExam.create(current_user.id, settings)
+        
+        # Store exam_id in session
+        session['ojee_exam_id'] = exam_data['exam_id']
+        
+        # Redirect to processing page
+        return redirect(url_for('ojee_exam_generate'))
+    
+    return render_template('ojee/config.html', form=form)
+
+@app.route('/ojee/generate', methods=['GET'])
+@login_required
+def ojee_exam_generate():
+    """Generate questions for OJEE mock exam"""
+    from models_mongo import OJEEExam
+    from utils.question_generator import generate_ojee_questions
+    import json
+    
+    exam_id = session.get('ojee_exam_id')
+    if not exam_id:
+        flash('No exam configuration found. Please start over.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    exam_data = OJEEExam.get_by_id(exam_id)
+    if not exam_data:
+        flash('Exam not found. Please create a new exam.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    if request.method == 'GET':
+        if exam_data['status'] == 'ready':
+            # Questions already generated, proceed to exam
+            return redirect(url_for('ojee_exam_take'))
+            
+        # Show processing page
+        return render_template('ojee/processing.html', exam_id=exam_id)
+
+@app.route('/ojee/generate/status', methods=['GET'])
+@login_required
+def ojee_exam_generate_status():
+    """Check and update OJEE exam generation status"""
+    from models_mongo import OJEEExam
+    from utils.question_generator import generate_ojee_questions
+    import json
+    import threading
+    
+    # Get exam_id from query param first, fall back to session if not provided
+    exam_id = request.args.get('exam_id') or session.get('ojee_exam_id')
+    if not exam_id:
+        return jsonify({'status': 'error', 'message': 'No exam configuration found'})
+    
+    exam_data = OJEEExam.get_by_id(exam_id)
+    if not exam_data:
+        return jsonify({'status': 'error', 'message': 'Exam not found'})
+    
+    if exam_data['status'] == 'created':
+        # Start generating questions in background
+        def generate_and_save():
+            try:
+                # Use the unified generate_ojee_questions function
+                all_questions = generate_ojee_questions(
+                    math_count=exam_data['settings']['math_questions'],
+                    computer_count=exam_data['settings']['computer_questions']
+                )
+                
+                # Save questions to database
+                OJEEExam.save_questions(exam_id, all_questions)
+                logger.info(f"OJEE exam questions generated successfully for exam {exam_id}")
+                
+            except Exception as e:
+                logger.error(f"Error generating OJEE exam questions: {str(e)}")
+                OJEEExam.update_exam(exam_id, {"status": "error"})
+        
+        # Start background thread for question generation
+        threading.Thread(target=generate_and_save).start()
+        
+        # Update status to processing
+        OJEEExam.update_exam(exam_id, {"status": "processing"})
+        return jsonify({'status': 'processing', 'message': 'Started generating questions'})
+    
+    # Return current status
+    return jsonify({
+        'status': exam_data['status'],
+        'message': 'Questions generated successfully' if exam_data['status'] == 'ready' else 'Still processing'
+    })
+
+@app.route('/ojee/take', methods=['GET'])
+@login_required
+def ojee_exam_take():
+    """Take OJEE mock exam"""
+    from models_mongo import OJEEExam
+    
+    exam_id = session.get('ojee_exam_id')
+    if not exam_id:
+        flash('No exam configuration found. Please start over.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    exam_data = OJEEExam.get_by_id(exam_id)
+    if not exam_data or exam_data['status'] != 'ready':
+        flash('Exam is not ready. Please wait for question generation to complete.', 'warning')
+        return redirect(url_for('ojee_exam_generate'))
+    
+    # Mark exam as started if not already
+    if exam_data['status'] == 'ready':
+        OJEEExam.mark_started(exam_id)
+    
+    # Load questions from database
+    questions = json.loads(exam_data['questions'])
+    
+    # Add properties that the template expects to access directly
+    exam_data['math_count'] = exam_data['settings']['math_questions']
+    exam_data['computer_count'] = exam_data['settings']['computer_questions']
+    exam_data['time_limit'] = exam_data['settings']['exam_duration']
+    
+    return render_template('ojee/exam.html', 
+                          exam=exam_data, 
+                          questions=questions,
+                          math_questions=questions['mathematics'],
+                          computer_questions=questions['computer_awareness'])
+
+@app.route('/ojee/submit', methods=['POST'])
+@login_required
+def ojee_exam_submit():
+    """Handle OJEE mock exam submission"""
+    from models_mongo import OJEEExam
+    
+    exam_id = session.get('ojee_exam_id')
+    if not exam_id:
+        flash('No exam found. Please start a new exam.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    exam_data = OJEEExam.get_by_id(exam_id)
+    if not exam_data:
+        flash('Exam not found. Please create a new exam.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    # Get answers from form
+    user_answers = {
+        'mathematics': {},
+        'computer_awareness': {}
+    }
+    
+    questions = json.loads(exam_data['questions'])
+    
+    # Process mathematics answers
+    for i, _ in enumerate(questions['mathematics']):
+        answer_key = f'math_answer_{i}'
+        if answer_key in request.form:
+            user_answers['mathematics'][str(i)] = request.form[answer_key]
+    
+    # Process computer awareness answers
+    for i, _ in enumerate(questions['computer_awareness']):
+        answer_key = f'comp_answer_{i}'
+        if answer_key in request.form:
+            user_answers['computer_awareness'][str(i)] = request.form[answer_key]
+    
+    # Calculate scores
+    math_correct = 0
+    math_total = len(questions['mathematics'])
+    
+    for i, question in enumerate(questions['mathematics']):
+        user_answer = user_answers['mathematics'].get(str(i), '')
+        if user_answer == question['answer']:
+            math_correct += 1
+    
+    comp_correct = 0
+    comp_total = len(questions['computer_awareness'])
+    
+    for i, question in enumerate(questions['computer_awareness']):
+        user_answer = user_answers['computer_awareness'].get(str(i), '')
+        if user_answer == question['answer']:
+            comp_correct += 1
+    
+    total_correct = math_correct + comp_correct
+    total_questions = math_total + comp_total
+    
+    score_data = {
+        'math_correct': math_correct,
+        'math_total': math_total,
+        'math_percentage': (math_correct / math_total * 100) if math_total > 0 else 0,
+        'comp_correct': comp_correct,
+        'comp_total': comp_total,
+        'comp_percentage': (comp_correct / comp_total * 100) if comp_total > 0 else 0,
+        'total_correct': total_correct,
+        'total_questions': total_questions,
+        'total_percentage': (total_correct / total_questions * 100) if total_questions > 0 else 0
+    }
+    
+    # Save results to database
+    OJEEExam.mark_completed(exam_id, user_answers, score_data)
+    
+    # Update user study stats
+    current_user.update_study_stats(
+        score=score_data['total_percentage'],
+        total_questions=total_questions,
+        correct_answers=total_correct,
+        test_type='ojee_mock'
+    )
+    
+    # Store results in session for results page
+    session['ojee_results'] = {
+        'exam_id': exam_id,
+        'score_data': score_data
+    }
+    
+    return redirect(url_for('ojee_exam_results'))
+
+@app.route('/ojee/results', methods=['GET'])
+@login_required
+def ojee_exam_results():
+    """Display OJEE mock exam results"""
+    from models_mongo import OJEEExam
+    
+    results_data = session.get('ojee_results')
+    if not results_data:
+        flash('No exam results found. Please take an exam first.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    exam_id = results_data['exam_id']
+    exam_data = OJEEExam.get_by_id(exam_id)
+    
+    if not exam_data:
+        flash('Exam not found. Please create a new exam.', 'warning')
+        return redirect(url_for('ojee_exam_config'))
+    
+    questions = json.loads(exam_data['questions'])
+    user_answers = exam_data.get('user_answers', {})
+    score_data = exam_data.get('score', results_data['score_data'])
+    show_explanations = exam_data['settings'].get('show_explanations', True)
+    
+    # Create results data structure
+    math_results = []
+    for i, question in enumerate(questions['mathematics']):
+        user_answer = user_answers.get('mathematics', {}).get(str(i), '')
+        is_correct = user_answer == question['answer']
+        
+        math_results.append({
+            'question': question['question'],
+            'options': question['options'],
+            'user_answer': user_answer,
+            'correct_answer': question['answer'],
+            'is_correct': is_correct,
+            'explanation': question.get('explanation', '')
+        })
+    
+    comp_results = []
+    for i, question in enumerate(questions['computer_awareness']):
+        user_answer = user_answers.get('computer_awareness', {}).get(str(i), '')
+        is_correct = user_answer == question['answer']
+        
+        comp_results.append({
+            'question': question['question'],
+            'options': question['options'],
+            'user_answer': user_answer,
+            'correct_answer': question['answer'],
+            'is_correct': is_correct,
+            'explanation': question.get('explanation', '')
+        })
+    
+    # Calculate exam duration
+    start_time = exam_data.get('start_time')
+    end_time = exam_data.get('end_time')
+    duration_minutes = 0
+    time_per_question = 0
+    
+    if start_time and end_time:
+        duration = (end_time - start_time).total_seconds()
+        duration_minutes = round(duration / 60, 1)
+        total_questions = score_data['total_questions']
+        time_per_question = round(duration / total_questions) if total_questions > 0 else 0
+    
+    # Prepare strengths and weaknesses
+    strengths = []
+    weaknesses = []
+    
+    # Mathematics performance
+    math_percentage = score_data.get('math_percentage', 0)
+    if math_percentage >= 70:
+        strengths.append("Strong performance in Mathematics section")
+    elif math_percentage <= 40:
+        weaknesses.append("Mathematics section needs improvement")
+        
+    # Computer awareness performance
+    comp_percentage = score_data.get('comp_percentage', 0)
+    if comp_percentage >= 70:
+        strengths.append("Strong performance in Computer Awareness section")
+    elif comp_percentage <= 40:
+        weaknesses.append("Computer Awareness section needs improvement")
+    
+    # Time management
+    if time_per_question > 60:  # more than 60 seconds per question
+        weaknesses.append("Time management - spent too long on questions")
+    elif time_per_question < 20:  # less than 20 seconds per question
+        weaknesses.append("May be rushing through questions too quickly")
+    else:
+        strengths.append("Good time management")
+    
+    # Overall score
+    total_percentage = score_data.get('total_percentage', 0)
+    if total_percentage >= 75:
+        strengths.append("Excellent overall performance")
+    elif total_percentage <= 35:
+        weaknesses.append("General understanding of topics needs improvement")
+    
+    # Default topic data
+    topic_data = [
+        {"topic": "Algebra", "score": 75},
+        {"topic": "Geometry", "score": 60},
+        {"topic": "Computer Basics", "score": 85},
+        {"topic": "Programming", "score": 40},
+    ]
+    
+    # Prepare the result object for the template
+    result = {
+        'total_score': round(score_data.get('total_percentage', 0)),
+        'total_correct': score_data.get('total_correct', 0),
+        'total_questions': score_data.get('total_questions', 0),
+        'math_score': round(score_data.get('math_percentage', 0)),
+        'math_correct': score_data.get('math_correct', 0),
+        'math_total': score_data.get('math_total', 0),
+        'computer_score': round(score_data.get('comp_percentage', 0)),
+        'computer_correct': score_data.get('comp_correct', 0),
+        'computer_total': score_data.get('comp_total', 0),
+        'duration_minutes': duration_minutes,
+        'time_per_question': time_per_question,
+        'strengths': strengths,
+        'weaknesses': weaknesses,
+        'topic_data': topic_data,
+        'all_questions': math_results + comp_results,
+        'incorrect_questions': [q for q in math_results + comp_results if not q['is_correct']],
+        'math_questions': math_results,
+        'computer_questions': comp_results
+    }
+
+    return render_template('ojee/results.html',
+                         exam=exam_data,
+                         result=result,
+                         score_data=score_data,
+                         math_results=math_results,
+                         comp_results=comp_results,
+                         show_questions=show_explanations)
+
+@app.route('/ojee/history', methods=['GET'])
+@login_required
+def ojee_exam_history():
+    """Show history of OJEE mock exams taken by user"""
+    from models_mongo import OJEEExam
+    
+    user_exams = OJEEExam.get_by_user(current_user.id)
+    completed_exams = [exam for exam in user_exams if exam.get('completed', False)]
+    
+    return render_template('ojee/history.html', exams=completed_exams)
+
 # Error handlers
 @app.errorhandler(404)
 def page_not_found(e):
