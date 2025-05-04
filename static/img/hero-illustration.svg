@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="500" height="400" rx="10" fill="#0D6EFD" opacity="0.05"/>
+  
+  <!-- PDF Document -->
+  <rect x="100" y="100" width="150" height="200" rx="5" fill="#f8f9fa" stroke="#0D6EFD" stroke-width="2"/>
+  <rect x="110" y="120" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="140" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="160" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="180" width="100" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="220" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="240" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  <rect x="110" y="260" width="60" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <!-- PDF Icon -->
+  <path d="M140 90H125C123.895 90 123 90.8954 123 92V108C123 109.105 123.895 110 125 110H140C141.105 110 142 109.105 142 108V92C142 90.8954 141.105 90 140 90Z" fill="#0D6EFD"/>
+  <path d="M126 95H139M126 100H139M126 105H134" stroke="white" stroke-width="1" stroke-linecap="round"/>
+  
+  <!-- Arrow -->
+  <path d="M280 200H340" stroke="#0D6EFD" stroke-width="3" stroke-linecap="round"/>
+  <path d="M335 190L345 200L335 210" stroke="#0D6EFD" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- MCQ Document -->
+  <rect x="370" y="100" width="150" height="200" rx="5" fill="#f8f9fa" stroke="#0D6EFD" stroke-width="2"/>
+  <rect x="380" y="120" width="130" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <!-- Multiple Choice Options -->
+  <circle cx="390" cy="150" r="5" fill="#0D6EFD"/>
+  <rect x="400" y="145" width="90" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <circle cx="390" cy="170" r="5" fill="white" stroke="#0D6EFD" stroke-width="2"/>
+  <rect x="400" y="165" width="90" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <circle cx="390" cy="190" r="5" fill="white" stroke="#0D6EFD" stroke-width="2"/>
+  <rect x="400" y="185" width="90" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <circle cx="390" cy="210" r="5" fill="white" stroke="#0D6EFD" stroke-width="2"/>
+  <rect x="400" y="205" width="90" height="10" rx="2" fill="#ADB5BD"/>
+  
+  <!-- Badges -->
+  <circle cx="160" cy="340" r="25" fill="#0D6EFD"/>
+  <path d="M160 325V355M145 340H175" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  
+  <circle cx="220" cy="340" r="25" fill="#198754"/>
+  <path d="M210 340L220 350L235 335" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <circle cx="280" cy="340" r="25" fill="#DC3545"/>
+  <path d="M270 340L290 340M280 330L280 350" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="350" cy="75" r="15" fill="#0D6EFD" opacity="0.3"/>
+  <circle cx="150" cy="50" r="10" fill="#198754" opacity="0.3"/>
+  <circle cx="450" cy="330" r="12" fill="#DC3545" opacity="0.3"/>
+</svg>

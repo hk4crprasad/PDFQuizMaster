@@ -1,0 +1,6 @@
+uv.lock
+**/*.pdf
+attached_assets
+**/__pycache__
+**/pyproject.toml
+**/.env

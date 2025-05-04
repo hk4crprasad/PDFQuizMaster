@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}My Tests | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">My Tests</h1>
+        <a href="{{ url_for('upload') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Upload New PDF
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light py-3">
+            <div class="row">
+                <div class="col-md-5">
+                    <strong>PDF Document</strong>
+                </div>
+                <div class="col-md-2 text-center">
+                    <strong>Status</strong>
+                </div>
+                <div class="col-md-2 text-center">
+                    <strong>Uploaded</strong>
+                </div>
+                <div class="col-md-3 text-center">
+                    <strong>Actions</strong>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if pdfs %}
+                <ul class="list-group list-group-flush">
+                    {% for pdf in pdfs %}
+                    <li class="list-group-item py-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <div class="d-flex align-items-center">
+                                    <div class="pdf-icon me-3">
+                                        <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <div class="pdf-info">
+                                        <h6 class="mb-1">{{ pdf.title }}</h6>
+                                        <span class="text-muted small">{{ pdf.filename }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                {% if pdf.status == 'processing' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-hourglass-split me-1"></i> Processing
+                                    </span>
+                                {% elif pdf.status == 'failed' %}
+                                    <span class="badge bg-danger">
+                                        <i class="bi bi-exclamation-triangle me-1"></i> Failed
+                                    </span>
+                                {% elif pdf.status == 'ready' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Ready
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-question-circle me-1"></i> Unknown
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="text-muted small">
+                                    {{ pdf.uploaded_at|datetime }}
+                                </span>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex justify-content-center gap-2">
+                                    {% if pdf.status == 'processing' %}
+                                        <a href="{{ url_for('process_pdf_from_id', pdf_id=pdf._id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> View Progress
+                                        </a>
+                                    {% elif pdf.status == 'ready' %}
+                                        <a href="{{ url_for('take_specific_test', pdf_id=pdf._id) }}" class="btn btn-sm btn-success">
+                                            <i class="bi bi-pencil-square me-1"></i> Take Test
+                                        </a>
+                                        <a href="{{ url_for('download_pdf', pdf_id=pdf._id) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-download me-1"></i> Download
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('upload') }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-arrow-repeat me-1"></i> Retry
+                                        </a>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                           onclick="confirmDelete('{{ pdf._id }}', '{{ pdf.title }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-file-earmark-pdf" style="font-size: 3rem; opacity: 0.2;"></i>
+                    </div>
+                    <h5>No PDFs Uploaded Yet</h5>
+                    <p class="text-muted mb-4">Upload a PDF document to generate test questions.</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i class="bi bi-upload me-2"></i>Upload Your First PDF
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <span id="pdfTitle" class="fw-bold"></span>?</p>
+                    <p class="text-danger">This action cannot be undone and will remove the PDF along with any associated tests.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm" method="POST" action="{{ url_for('delete_pdf') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="pdf_id" id="pdfIdInput">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(pdfId, pdfTitle) {
+        document.getElementById('pdfTitle').textContent = pdfTitle;
+        document.getElementById('pdfIdInput').value = pdfId;
+        
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+</script>
+{% endblock %}

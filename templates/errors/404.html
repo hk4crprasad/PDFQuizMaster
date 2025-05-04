@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6 text-center">
+        <div class="error-container py-5">
+            <h1 class="display-1 text-muted">404</h1>
+            <div class="mb-4">
+                <i class="bi bi-search" style="font-size: 5rem; opacity: 0.3;"></i>
+            </div>
+            <h2>Page Not Found</h2>
+            <p class="lead text-muted mb-4">
+                The page you are looking for might have been removed, had its name changed, 
+                or is temporarily unavailable.
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg px-4">
+                    <i class="bi bi-house me-2"></i>
+                    Go to Homepage
+                </a>
+                <button onclick="window.history.back()" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Go Back
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Study Recommendations | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Study Recommendations</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if recommendations %}
+                <div class="recommendations-list">
+                    {% for rec in recommendations %}
+                    <div class="recommendation-item mb-4 p-4 border rounded">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 me-3">
+                                <i class="bi {{ rec.icon }} fs-1 text-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5>{{ rec.title }}</h5>
+                                <p class="mb-3">{{ rec.description }}</p>
+                                
+                                {% if rec.type == 'review' and rec.pdf_id %}
+                                <a href="{{ url_for('take_specific_test', pdf_id=rec.pdf_id) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-book me-2"></i>Study This Material
+                                </a>
+                                {% elif rec.type == 'practice' %}
+                                <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-journal-check me-2"></i>Take More Tests
+                                </a>
+                                {% elif rec.type == 'expand' %}
+                                <a href="{{ url_for('upload') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-circle me-2"></i>Upload New PDF
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-lightbulb" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <h5 class="mt-3">No recommendations yet</h5>
+                    <p class="text-muted mb-4">Take more tests to receive personalized study recommendations.</p>
+                    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Upload PDF
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">Study Tips</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="study-tip p-3 border rounded h-100">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-primary">
+                                    <i class="bi bi-clock fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5>Spaced Repetition</h5>
+                                    <p class="mb-0 text-muted">
+                                        Studies show that spacing out your review sessions over time leads to better long-term retention than cramming.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="study-tip p-3 border rounded h-100">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-primary">
+                                    <i class="bi bi-pencil fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5>Active Recall</h5>
+                                    <p class="mb-0 text-muted">
+                                        Testing yourself forces you to actively retrieve information, which strengthens memory better than passive re-reading.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="study-tip p-3 border rounded h-100">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-primary">
+                                    <i class="bi bi-list-check fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5>Interleaved Practice</h5>
+                                    <p class="mb-0 text-muted">
+                                        Mixing different topics in your study sessions improves your ability to distinguish between concepts and apply them correctly.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="study-tip p-3 border rounded h-100">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-primary">
+                                    <i class="bi bi-eye fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5>Focus on Weak Areas</h5>
+                                    <p class="mb-0 text-muted">
+                                        Concentrate your effort on topics where you scored lowest to maximize your improvement.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Upload PDF | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Upload PDF Document</h4>
+            </div>
+            <div class="card-body p-4">
+                <form id="uploadForm" method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="bi bi-info-circle-fill fs-3"></i>
+                                </div>
+                                <div>
+                                    <h5 class="alert-heading">PDF Processing Information</h5>
+                                    <p class="mb-0">
+                                        Upload a PDF document to generate multiple-choice questions automatically. 
+                                        You can upload documents up to 32MB in size.
+                                    </p>
+                                    <ul class="mt-2 mb-0">
+                                        <li>Regular PDFs and encrypted PDFs are supported</li>
+                                        <li>Scanned documents are processed with OCR technology</li>
+                                        <li>12 questions will be generated for each PDF</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.pdf_file.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.pdf_file(class="form-control", accept=".pdf") }}
+                            <label class="input-group-text" for="pdf_file">
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Browse
+                            </label>
+                        </div>
+                        {% if form.pdf_file.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.pdf_file.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Maximum file size: 32MB. Supported format: PDF only.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.ocr_method.label(class="form-label") }}
+                        {{ form.ocr_method(class="form-select") }}
+                        {% if form.ocr_method.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in form.ocr_method.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            <ul class="mb-0">
+                                <li><strong>Auto-detect:</strong> Use OCR only if needed (recommended)</li>
+                                <li><strong>Local OCR:</strong> Use local OCR tools for scanned documents</li>
+                                <li><strong>Azure OCR:</strong> Use Azure Document Intelligence for better accuracy with complex scanned documents</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">How it Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3 mb-md-0">
+                        <div class="p-3">
+                            <div class="process-icon bg-primary text-white rounded-circle mb-3">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                            </div>
+                            <h5>1. Upload</h5>
+                            <p class="text-muted small">Upload any PDF document</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center mb-3 mb-md-0">
+                        <div class="p-3">
+                            <div class="process-icon bg-primary text-white rounded-circle mb-3">
+                                <i class="bi bi-magic"></i>
+                            </div>
+                            <h5>2. Generate</h5>
+                            <p class="text-muted small">Questions are automatically created</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="p-3">
+                            <div class="process-icon bg-primary text-white rounded-circle mb-3">
+                                <i class="bi bi-pencil-square"></i>
+                            </div>
+                            <h5>3. Take Test</h5>
+                            <p class="text-muted small">Test your knowledge</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+    .process-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Processing PDF | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Processing PDF</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <div class="pdf-icon mb-3">
+                        <i class="bi bi-file-earmark-pdf" style="font-size: 4rem; color: #0d6efd;"></i>
+                    </div>
+                    <h5 class="mb-3">{{ pdf_title }}</h5>
+                    <div class="processing-status mb-4">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="lead" id="status-text">Processing your PDF...</p>
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 id="progress-bar" role="progressbar" 
+                                 style="width: 0%" aria-valuenow="0" 
+                                 aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <p class="text-muted small" id="status-detail">This may take a few minutes depending on the size and complexity of your document...</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <div class="d-flex">
+                        <div class="me-3">
+                            <i class="bi bi-info-circle-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="alert-heading">Enhanced OCR Process</h6>
+                            <p class="mb-0 small">
+                                We're using advanced OCR technology to extract text from your PDF, especially if it contains scanned pages or images. This helps us generate better quality questions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="processing-steps mt-4">
+                    <h6 class="mb-3">Processing Steps:</h6>
+                    <div class="step-item d-flex align-items-start mb-3">
+                        <div class="step-icon me-3" id="step1-icon">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold">PDF Upload</p>
+                            <p class="text-muted small mb-0">Your file has been uploaded successfully</p>
+                        </div>
+                    </div>
+                    <div class="step-item d-flex align-items-start mb-3">
+                        <div class="step-icon me-3" id="step2-icon">
+                            <i class="bi bi-arrow-repeat text-primary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold">OCR Processing</p>
+                            <p class="text-muted small mb-0" id="step2-text">Applying advanced OCR to extract and optimize text content</p>
+                        </div>
+                    </div>
+                    <div class="step-item d-flex align-items-start mb-3">
+                        <div class="step-icon me-3" id="step3-icon">
+                            <i class="bi bi-hourglass text-secondary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold">Question Generation</p>
+                            <p class="text-muted small mb-0" id="step3-text">Waiting to create multiple-choice questions based on content</p>
+                        </div>
+                    </div>
+                    <div class="step-item d-flex align-items-start">
+                        <div class="step-icon me-3" id="step4-icon">
+                            <i class="bi bi-hourglass text-secondary"></i>
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-bold">Test Preparation</p>
+                            <p class="text-muted small mb-0" id="step4-text">Waiting to format and prepare your test</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-light p-3 d-flex justify-content-between">
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-house me-1"></i> Home
+                </a>
+                <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-person me-1"></i> View My PDFs
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Poll for status updates
+    let processingComplete = false;
+    const pollInterval = 2000; // 2 seconds
+    
+    function updateProgress(step, progress) {
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = progress + '%';
+        progressBar.setAttribute('aria-valuenow', progress);
+        
+        // Update icons based on current step
+        if (step >= 2) {
+            document.getElementById('step2-icon').innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            document.getElementById('step2-text').textContent = 'OCR processing complete';
+            document.getElementById('step3-icon').innerHTML = '<i class="bi bi-arrow-repeat text-primary"></i>';
+            document.getElementById('step3-text').textContent = 'Generating multiple-choice questions...';
+        }
+        
+        if (step >= 3) {
+            document.getElementById('step3-icon').innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            document.getElementById('step3-text').textContent = 'Questions generated successfully';
+            document.getElementById('step4-icon').innerHTML = '<i class="bi bi-arrow-repeat text-primary"></i>';
+            document.getElementById('step4-text').textContent = 'Finalizing test...';
+        }
+        
+        if (step >= 4) {
+            document.getElementById('step4-icon').innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+            document.getElementById('step4-text').textContent = 'Test is ready!';
+            document.getElementById('status-text').textContent = 'Processing Complete!';
+            document.getElementById('status-detail').textContent = 'Your test is now ready to take.';
+            
+            // Remove spinner
+            document.querySelector('.spinner-border').remove();
+            
+            // Add success icon
+            const processingStatus = document.querySelector('.processing-status');
+            processingStatus.insertAdjacentHTML('afterbegin', 
+                '<div class="mb-3"><i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i></div>');
+            
+            // Add take test button
+            const cardFooter = document.querySelector('.card-footer');
+            cardFooter.innerHTML = `
+                <a href="{{ url_for('take_test') }}" class="btn btn-primary">
+                    <i class="bi bi-pencil-square me-2"></i>Take Test Now
+                </a>
+            `;
+            
+            processingComplete = true;
+        }
+    }
+    
+    function checkStatus() {
+        if (processingComplete) return;
+        
+        fetch('/pdf_status?id={{ pdf_id }}')
+            .then(response => response.json())
+            .then(data => {
+                updateProgress(data.step, data.progress);
+                
+                if (!data.complete) {
+                    setTimeout(checkStatus, pollInterval);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+                setTimeout(checkStatus, pollInterval);
+            });
+    }
+    
+    // Start polling when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(checkStatus, 1000);
+        
+        // Simulate progress for demo/development
+        let step = 1;
+        let progress = 10;
+        
+        function simulateProgress() {
+            if (processingComplete) return;
+            
+            progress += 5;
+            if (progress >= 100) {
+                progress = 100;
+                step = 4;
+                updateProgress(step, progress);
+                return;
+            }
+            
+            if (progress > 30 && step === 1) {
+                step = 2;
+            } else if (progress > 60 && step === 2) {
+                step = 3;
+            } else if (progress > 90 && step === 3) {
+                step = 4;
+            }
+            
+            updateProgress(step, progress);
+            
+            if (progress < 100) {
+                setTimeout(simulateProgress, 800);
+            }
+        }
+        
+        // Comment out in production when real status checking is implemented
+        // simulateProgress();
+    });
+</script>
+{% endblock %}

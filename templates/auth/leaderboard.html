@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">XP Leaderboard</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if top_users %}
+                <div class="leaderboard-list">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col" width="10%">Rank</th>
+                                    <th scope="col" width="50%">User</th>
+                                    <th scope="col" width="20%">XP Points</th>
+                                    <th scope="col" width="20%">Tests Taken</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in top_users %}
+                                <tr class="{% if current_user.is_authenticated and user._id == current_user.id %}table-primary{% endif %}">
+                                    <td class="align-middle">
+                                        <span class="badge bg-secondary">{{ loop.index }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3" style="width: 36px; height: 36px; font-size: 16px;">
+                                                {{ user.username[0].upper() }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ user.username }}</h6>
+                                                <div class="badges-inline">
+                                                    {% for badge in user.badges %}
+                                                    {% if badge.earned %}
+                                                    <i class="bi {{ badge.icon }} text-primary small" title="{{ badge.name }}"></i>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="fw-bold">{{ user.xp_points }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        {% if user.study_stats %}
+                                            {{ user.study_stats.tests_taken }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                
+                                {% if user_rank and user_rank > 20 %}
+                                <tr class="table-divider">
+                                    <td colspan="4" class="text-center py-2">
+                                        <i class="bi bi-three-dots"></i>
+                                    </td>
+                                </tr>
+                                <tr class="table-primary">
+                                    <td class="align-middle">
+                                        <span class="badge bg-secondary">{{ user_rank }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3" style="width: 36px; height: 36px; font-size: 16px;">
+                                                {{ current_user.username[0].upper() }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ current_user.username }}</h6>
+                                                <div class="badges-inline">
+                                                    {% for badge in current_user.badges %}
+                                                    {% if badge.earned %}
+                                                    <i class="bi {{ badge.icon }} text-primary small" title="{{ badge.name }}"></i>
+                                                    {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="fw-bold">{{ current_user.xp_points }}</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        {{ current_user.study_stats.tests_taken }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-trophy" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <h5 class="mt-3">No users yet</h5>
+                    <p class="text-muted mb-0">Be the first to take a test and appear on the leaderboard!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">How to Earn XP</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="xp-item p-3 border rounded">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-info">
+                                    <i class="bi bi-file-earmark-plus fs-2"></i>
+                                </div>
+                                <div>
+                                    <h5>Upload PDF</h5>
+                                    <p class="text-muted mb-1">+5 XP per PDF</p>
+                                    <small class="text-muted">Earn XP for each PDF you upload to the system.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="xp-item p-3 border rounded">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-info">
+                                    <i class="bi bi-pencil-square fs-2"></i>
+                                </div>
+                                <div>
+                                    <h5>Complete Tests</h5>
+                                    <p class="text-muted mb-1">+10 XP per test</p>
+                                    <small class="text-muted">Earn XP for every test you complete, regardless of score.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="xp-item p-3 border rounded">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-info">
+                                    <i class="bi bi-check2-all fs-2"></i>
+                                </div>
+                                <div>
+                                    <h5>Correct Answers</h5>
+                                    <p class="text-muted mb-1">+5 XP per correct answer</p>
+                                    <small class="text-muted">Earn additional XP for each question you answer correctly.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="xp-item p-3 border rounded">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3 text-info">
+                                    <i class="bi bi-award fs-2"></i>
+                                </div>
+                                <div>
+                                    <h5>Earn Badges</h5>
+                                    <p class="text-muted mb-1">+20 XP per badge</p>
+                                    <small class="text-muted">Unlock achievements to earn bonus XP points.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+    .badges-inline i {
+        margin-right: 4px;
+    }
+    
+    .table-divider {
+        background-color: transparent !important;
+    }
+    
+    .user-avatar {
+        background-color: var(--bs-primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

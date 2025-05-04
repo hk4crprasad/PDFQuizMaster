@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Test Results | PDF Test Generator{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header {% if score >= 80 %}bg-success{% elif score >= 60 %}bg-info{% elif score >= 40 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+                <h4 class="mb-0">Test Results: {{ pdf_title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="results-summary text-center mb-4">
+                    <div class="score-circle {% if score >= 80 %}bg-success{% elif score >= 60 %}bg-info{% elif score >= 40 %}bg-warning{% else %}bg-danger{% endif %} text-white mb-3">
+                        <span class="score-value">{{ score|round|int }}%</span>
+                    </div>
+                    <h5>{{ correct_count }} out of {{ total_questions }} correct</h5>
+                    
+                    <div class="score-message mt-3">
+                        {% if score >= 80 %}
+                            <div class="alert alert-success">
+                                <i class="bi bi-trophy me-2"></i>
+                                <strong>Excellent work!</strong> You've demonstrated a strong understanding of the material.
+                            </div>
+                        {% elif score >= 60 %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Good job!</strong> You have a solid grasp of the content but there's room for improvement.
+                            </div>
+                        {% elif score >= 40 %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Keep practicing!</strong> Review the material to strengthen your understanding.
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                <strong>Needs improvement.</strong> Consider studying the material more thoroughly.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if new_badges %}
+                <div class="new-badges mb-4">
+                    <h5 class="border-bottom pb-2 mb-3">New Badges Earned</h5>
+                    <div class="d-flex justify-content-center flex-wrap">
+                        {% for badge in new_badges %}
+                        <div class="badge-earned mx-2 mb-2">
+                            <i class="bi {{ badge.icon }}"></i>
+                            <div class="badge-tooltip">{{ badge.name }}: {{ badge.description }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <h5 class="border-bottom pb-2 mb-3">Detailed Results</h5>
+                
+                <div class="accordion" id="resultsAccordion">
+                    {% for result in results %}
+                    <div class="accordion-item mb-3 border">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not result.is_correct %}bg-light text-dark collapsed{% endif %}" type="button" 
+                                   data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" 
+                                   aria-expanded="{{ result.is_correct|tojson }}" aria-controls="collapse{{ loop.index }}">
+                                <div class="d-flex align-items-center w-100">
+                                    <div class="me-3">
+                                        {% if result.is_correct %}
+                                        <span class="badge bg-success p-2"><i class="bi bi-check-lg"></i></span>
+                                        {% else %}
+                                        <span class="badge bg-danger p-2"><i class="bi bi-x-lg"></i></span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="question-title text-truncate">
+                                        {{ loop.index }}. {{ result.question }}
+                                    </div>
+                                </div>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if not result.is_correct %}show{% endif %}" 
+                             data-bs-parent="#resultsAccordion">
+                            <div class="accordion-body">
+                                <p><strong>Question:</strong> {{ result.question }}</p>
+                                
+                                <div class="options-list mb-3">
+                                    {% for key, value in result.options.items() %}
+                                    <div class="option-item p-2 mb-2 rounded {% if key == result.correct_answer %}correct-answer{% elif key == result.user_answer and key != result.correct_answer %}wrong-answer{% endif %}">
+                                        <strong>{{ key }}.</strong> {{ value }}
+                                        
+                                        {% if key == result.correct_answer %}
+                                        <span class="float-end text-success"><i class="bi bi-check-circle-fill"></i> Correct</span>
+                                        {% elif key == result.user_answer and key != result.correct_answer %}
+                                        <span class="float-end text-danger"><i class="bi bi-x-circle-fill"></i> Your answer</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {% if not result.is_correct %}
+                                <div class="explanation mt-3 p-3 bg-light rounded">
+                                    <p class="mb-0">
+                                        <i class="bi bi-lightbulb me-2 text-warning"></i>
+                                        <strong>Note:</strong> The correct answer is <strong>{{ result.correct_answer }}</strong>.
+                                        {% if result.user_answer %}
+                                            You selected <strong>{{ result.user_answer }}</strong>.
+                                        {% else %}
+                                            You did not select an answer.
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Test Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="test-stats">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Score:</span>
+                                <span class="fw-bold">{{ score|round(1) }}%</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Correct Answers:</span>
+                                <span class="fw-bold">{{ correct_count }}/{{ total_questions }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>XP Earned:</span>
+                                <span class="fw-bold">+{{ (correct_count * 5) + 10 }} XP</span>
+                            </div>
+                            
+                            <!-- Progress chart -->
+                            <div class="progress-chart mt-4">
+                                <h6 class="mb-2">Score Breakdown</h6>
+                                <div class="progress mb-2" style="height: 24px;">
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ (correct_count / total_questions) * 100 }}%;" 
+                                         aria-valuenow="{{ (correct_count / total_questions) * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        Correct
+                                    </div>
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ ((total_questions - correct_count) / total_questions) * 100 }}%;" 
+                                         aria-valuenow="{{ ((total_questions - correct_count) / total_questions) * 100 }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                        Incorrect
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-success">{{ correct_count }} correct</small>
+                                    <small class="text-danger">{{ total_questions - correct_count }} incorrect</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">What's Next?</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="action-buttons">
+                            <a href="{{ url_for('upload') }}" class="btn btn-outline-primary d-block mb-3">
+                                <i class="bi bi-file-earmark-plus me-2"></i>Upload Another PDF
+                            </a>
+                            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-primary d-block mb-3">
+                                <i class="bi bi-person me-2"></i>View Your Profile
+                            </a>
+                            <a href="{{ url_for('auth.recommendations') }}" class="btn btn-outline-primary d-block mb-3">
+                                <i class="bi bi-lightbulb me-2"></i>Get Study Recommendations
+                            </a>
+                            <a href="{{ url_for('take_test') if 'test_id' in session else url_for('upload') }}" class="btn btn-primary d-block">
+                                <i class="bi bi-arrow-repeat me-2"></i>Retake This Test
+                            </a>
+                        </div>
+                        
+                        {% if score < 60 %}
+                        <div class="alert alert-warning mt-4 mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <small>Consider reviewing the material and taking the test again to improve your score.</small>
+                        </div>
+                        {% elif score == 100 %}
+                        <div class="alert alert-success mt-4 mb-0">
+                            <i class="bi bi-trophy me-2"></i>
+                            <small>Perfect score! Great job mastering this material!</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block head %}
+<style>
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    
+    .score-value {
+        font-size: 3rem;
+        font-weight: bold;
+    }
+    
+    .correct-answer {
+        background-color: rgba(25, 135, 84, 0.1);
+        border: 1px solid rgba(25, 135, 84, 0.2);
+    }
+    
+    .wrong-answer {
+        background-color: rgba(220, 53, 69, 0.1);
+        border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+    
+    .accordion-button:not(.collapsed) {
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--bs-dark);
+    }
+</style>
+{% endblock %}

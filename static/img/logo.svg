@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .pdf-text { font: bold 72px sans-serif; fill: #ffffff; }
+    .question { font: bold 80px sans-serif; fill: #ffffff; }
+  </style>
+  
+  <!-- Background rectangle -->
+  <rect x="0" y="0" width="512" height="512" rx="64" ry="64" fill="#0d6efd" />
+  
+  <!-- PDF Icon -->
+  <g transform="translate(70, 140)">
+    <!-- PDF Document Shape -->
+    <path d="M256,96 L256,416 L32,416 L32,32 L192,32 L256,96 Z" fill="#ffffff" />
+    <path d="M192,32 L192,96 L256,96 Z" fill="#e6e6e6" />
+    
+    <!-- PDF Text -->
+    <text x="80" y="180" class="pdf-text" fill="#0d6efd">PDF</text>
+    
+    <!-- Question mark -->
+    <text x="240" y="230" class="question" fill="#0d6efd">?</text>
+  </g>
+  
+  <!-- Question marks around -->
+  <text x="370" y="150" class="question" fill="#ffffff" opacity="0.3">?</text>
+  <text x="100" y="380" class="question" fill="#ffffff" opacity="0.3">?</text>
+  <text x="380" y="300" class="question" fill="#ffffff" opacity="0.3">?</text>
+</svg>
